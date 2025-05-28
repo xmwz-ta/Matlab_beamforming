@@ -22,7 +22,8 @@ X = [data(:,3), data(:,4), data(:,2), data(:,5), data(:,6), data(:,7), data(:,8)
 
 arrayPos = 0:d:(arrayNum-1) * d; %阵元位置
 
-angleIndex = -90:0.5:90;  % 以0.5°为步长扫过整个角度范围
+
+angleIndex = asin((-512:1:512-1)/512) * 180 /pi; %角度纲量
 
 angleIndexLength = length(angleIndex);
 
@@ -41,7 +42,7 @@ targetNum = 1;
 %定义权矢量矩阵 W
 W = zeros(arrayNum,angleIndexLength);
 for i=1:angleIndexLength
-    W(:,i)=1/sqrt(arrayNum).*exp(-1j*(2*pi/lambda).*arrayPos.'*sind(angleIndex(i)));
+    W(:,i)=exp(-1j*(2*pi/lambda).*arrayPos.'*sind(angleIndex(i)));
 end
  
 %信号协方差矩阵的最大似然估计
@@ -54,19 +55,24 @@ doa_cbf=zeros(angleIndexLength,1);
  
 %P(w)=W^H R W
 for i=1:1:angleIndexLength
-    doa_cbf(i) = W(:,i)' * R_hat * W(:,i);
+
+    doa_cbf(i)=conj(W(:,i).') * R_hat * W(:,i);
+
 end
 
 
+
+
+% 取模并转为 dB
+doa_cbf_db = 10 * log10(abs(doa_cbf));
+doa_cbf_db = doa_cbf_db - max(doa_cbf_db);
+
 figure;
-plot(angleIndex, 10*log10(doa_cbf), 'b', 'LineWidth', 1.5);
+plot(angleIndex, doa_cbf_db, 'b', 'LineWidth', 1.5);
 xlabel('Angle (deg)');
 ylabel('Power (dB)');
 title('DOA Estimation via CBF');
 grid on;
-
-% 取模并转为 dB
-doa_cbf_db = 10 * log10(abs(doa_cbf));
 
 % 极坐标绘图
 figure;
